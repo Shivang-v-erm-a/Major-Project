@@ -2,7 +2,7 @@
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import Help from "./Help";
- import {MdArrowOutward} from "react-icons/md";
+import { MdArrowOutward } from "react-icons/md";
 
 const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
   const [display, setDisplay] = useState(false);
@@ -45,7 +45,9 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
   // Setup variants when model loads
   useEffect(() => {
     const modelViewer = model.current;
-    if (!modelViewer) return;
+    const variantSelect = variantRef.current; // Copy ref to local variable
+
+    if (!modelViewer || !variantSelect) return;
 
     const onLoad = () => {
       const variants = modelViewer?.availableVariants || [];
@@ -53,25 +55,27 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
         const option = document.createElement("option");
         option.value = v;
         option.textContent = v;
-        variantRef?.current?.appendChild(option);
+        variantSelect.appendChild(option);
       });
 
+      // Default option
       const defaultOption = document.createElement("option");
       defaultOption.value = "Default";
       defaultOption.textContent = "Default";
-      variantRef?.current?.appendChild(defaultOption);
+      variantSelect.appendChild(defaultOption);
     };
-
-    modelViewer.addEventListener("load", onLoad);
 
     const onInput = (event) => {
       modelViewer.variantName = event.target.value === "Default" ? null : event.target.value;
     };
-    variantRef?.current?.addEventListener("input", onInput);
 
+    modelViewer.addEventListener("load", onLoad);
+    variantSelect.addEventListener("input", onInput);
+
+    // Cleanup safely
     return () => {
       modelViewer.removeEventListener("load", onLoad);
-      variantRef?.current?.removeEventListener("input", onInput);
+      variantSelect.removeEventListener("input", onInput);
     };
   }, []);
 
@@ -141,7 +145,6 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
               data-target={annotation.target}
               data-visibility-attribute="visible"
               onClick={() => handleAnnotateClick(annotation)}
-
             >
               <div className="HotspotAnnotation">{annotation.title}</div>
             </button>
@@ -154,15 +157,12 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
 
       <div className="qr-sec">
         {!ARSupported && (
-          <>
-            <LazyLoadImage
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(window.location.href)}`}
-              alt="QR Code"
-              effect="blur"
-              style={{ width: "110px", height: "110px", objectFit: "cover", marginBottom: "5px" }}
-            />
-
-          </>
+          <LazyLoadImage
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(window.location.href)}`}
+            alt="QR Code"
+            effect="blur"
+            style={{ width: "110px", height: "110px", objectFit: "cover", marginBottom: "5px" }}
+          />
         )}
 
         <div className="product-details">
@@ -178,12 +178,19 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
                 <span className="star">&#9733;</span>
               </div>
             </div>
-            <div style={{ fontSize: "18px", fontWeight: "bold", marginTop: "10px",background:'black',color:'white',padding:'6px',borderRadius:'60px'}}>
+            <div style={{
+              fontSize: "18px",
+              fontWeight: "bold",
+              marginTop: "10px",
+              background: 'black',
+              color: 'white',
+              padding: '6px',
+              borderRadius: '60px'
+            }}>
               <div style={{ display: 'flex', gap: '5px', alignItems: 'center', fontWeight: 'bold' }}>
                 Rs. 1000
                 <MdArrowOutward />
               </div>
-              
             </div>
           </div>
 
@@ -191,9 +198,7 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
             className="add-icon"
             onClick={handleAddToWishlist}
             style={{
-              background: isInWishlist
-                ?"red"
-                :"black",
+              background: isInWishlist ? "red" : "black",
               color: "white",
               borderRadius: "50%",
               width: "40px",
